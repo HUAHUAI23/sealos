@@ -205,16 +205,6 @@ export function PriceTable({
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 />
-                <Text
-                  color="grayModern.500"
-                  fontFamily="PingFang SC"
-                  fontSize="12px"
-                  fontWeight={500}
-                  lineHeight="16px"
-                  letterSpacing="0.5px"
-                  textTransform="lowercase">
-                  /{t('price.per1kTokens').toLowerCase()}
-                </Text>
               </Flex>
             )
           }
@@ -241,16 +231,6 @@ export function PriceTable({
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
                 </Flex>
               )}
               {info.row.original.price.output_price && (
@@ -274,16 +254,6 @@ export function PriceTable({
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
                 </Flex>
               )}
             </Flex>
