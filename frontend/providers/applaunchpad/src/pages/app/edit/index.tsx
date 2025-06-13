@@ -3,7 +3,6 @@ import { checkPermission } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
-import useDriver from '@/hooks/useDriver';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
@@ -33,6 +32,8 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
+import { ResponseCode } from '@/types/response';
+import { useGuideStore } from '@/store/guide';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -105,6 +106,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
@@ -123,12 +125,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     }
     return val;
   }, [screenWidth]);
+  const { createCompleted } = useGuideStore();
 
   // form
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
-  const { isGuided, closeGuide } = useDriver({ setIsAdvancedOpen });
 
   const realTimeForm = useRef(defaultEditVal);
 
@@ -156,6 +158,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
+      if (!createCompleted) {
+        return router.push('/app/detail?name=hello&guide=true');
+      }
+
       setIsLoading(true);
       try {
         const parsedNewYamlList = yamlList.map((item) => item.value);
@@ -185,10 +191,19 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (userSourcePrice?.gpu) {
           refetchPrice();
         }
-      } catch (error) {
-        console.error(error);
-        const msg = getErrText(error);
-        setErrorMessage(msg || JSON.stringify(error));
+      } catch (error: any) {
+        if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+          setErrorMessage(t('user_balance_not_enough'));
+          setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+        } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+          setErrorMessage(t('forbidden_create_app'));
+          setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+        } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
+          setErrorMessage(t('app_already_exists'));
+          setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+        } else {
+          setErrorMessage(JSON.stringify(error));
+        }
       }
       setIsLoading(false);
     },
@@ -201,7 +216,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice
+      refetchPrice,
+      createCompleted
     ]
   );
 
@@ -338,9 +354,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
-            closeGuide();
             formHook.handleSubmit(async (data) => {
-              // console.log(data, 'formHook.handleSubmit');
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 
@@ -419,7 +433,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={applyError}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+          errorCode={errorCode}
+        />
       )}
     </>
   );
